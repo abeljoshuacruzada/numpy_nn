@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from sklearn.metrics import r2_score, mean_squared_error
 
 def act_sigmoid(x, deriv=False):
