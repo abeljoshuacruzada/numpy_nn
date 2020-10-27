@@ -47,9 +47,9 @@ def create_regressor_nn(x, y, no_hidden_layer, no_hidden_nodes, gamma_list,
 
     Parameters
     ----------
-    x : pandas Series
+    x : array_like
         x dataset
-    y : pandas Series
+    y : array_like
         y output/target
     no_hidden_layer : int
         Number of hidden layer, excluding input and output layer
@@ -70,7 +70,8 @@ def create_regressor_nn(x, y, no_hidden_layer, no_hidden_nodes, gamma_list,
 
     Examples
     --------
-    >>> create_regressor_nn(X_train, y_train,
+    >>> create_regressor_nn(X_train.to_numpy(),
+                           y_train.to_numpy()[:, np.newaxis],
                  no_hidden_layer=2,
                  no_hidden_nodes=[3, 2],
                  gamma_list=[0.1, 0.01, 0.001],
@@ -94,26 +95,25 @@ def create_regressor_nn(x, y, no_hidden_layer, no_hidden_nodes, gamma_list,
         print('Invalid number of activation functions in the list')
         return
 
-    x = x.copy()
     if bias:
-        x.insert(0, 'bias', 1)
-    x = x.to_numpy()
-    y = y.to_numpy()[:, np.newaxis]
+        new_x = np.ones((x.shape[0], x.shape[1] + 1))
+        new_x[:, 1:] = x
+        x = new_x
     no_inputs = x.shape[1]
     no_output = (1 if len(y.shape) == 1 else y.shape[1])
     np.random.seed(seed)
 
     # Initialize weights
-    wlist = [2 * np.random.random((no_inputs, no_hidden_nodes[0])) - 1]
+    wlist = [2*np.random.random((no_inputs, no_hidden_nodes[0]))-1]
     for hidden in range(no_hidden_layer):
         if hidden == no_hidden_layer - 1:
             # Initial weights for last layer
-            wlist.append(2 * np.random.random((no_hidden_nodes[hidden],
-                                               no_output)) - 1)
+            wlist.append(2*np.random.random((no_hidden_nodes[hidden],
+                                             no_output))-1)
         else:
             # Initial weights for middle layer
-            wlist.append(2 * np.random.random((no_hidden_nodes[hidden],
-                                               no_hidden_nodes[hidden + 1])) - 1)
+            wlist.append(2*np.random.random((no_hidden_nodes[hidden],
+                                             no_hidden_nodes[hidden + 1]))-1)
     last_error = None
     i = 0
     while True:
@@ -143,13 +143,13 @@ def create_regressor_nn(x, y, no_hidden_layer, no_hidden_nodes, gamma_list,
             if ind == (len(layers) - 1):
                 # Last layer
                 # Layer, weight, activation function
-                layer, w, act = layers[ind - 1], wlist[ind - 1], act_list[ind - 1]
+                layer, w, act = layers[ind-1], wlist[ind-1], act_list[ind-1]
                 delta = (error * act(np.dot(layer, w), True))
             else:
                 last_delta, w, act = (gradients[-1], wlist[ind],
-                                      act_list[ind - 1])
-                delta = (last_delta.dot(w.T) * act(np.dot(layers[ind - 1],
-                                                          wlist[ind - 1]),
+                                      act_list[ind-1])
+                delta = (last_delta.dot(w.T) * act(np.dot(layers[ind-1],
+                                                          wlist[ind-1]),
                                                    True))
             gradients.append(delta)
 
