@@ -43,7 +43,7 @@ def create_regressor_nn(x, y, no_hidden_layer, no_hidden_nodes, gamma_list,
                         act_list, bias=False, seed=42):
     """
     Create a Regressor Neural Network implementation using numpy.
-    Returns 3 tuple of (actual result, error, r2)
+    Returns 4 tuple of (actual result, error, r2, list of weights)
 
     Parameters
     ----------
@@ -66,7 +66,7 @@ def create_regressor_nn(x, y, no_hidden_layer, no_hidden_nodes, gamma_list,
 
     Returns
     -------
-        Returns 3 tuple of (actual result, error, r2)
+        Returns 3 tuple of (actual result, error, r2, list of weights)
 
     Examples
     --------
@@ -94,6 +94,10 @@ def create_regressor_nn(x, y, no_hidden_layer, no_hidden_nodes, gamma_list,
     if len(act_list) != (no_hidden_layer + 1):
         print('Invalid number of activation functions in the list')
         return
+    
+    if len(no_hidden_nodes) != no_hidden_layer:
+        print('Invalid length of hidden nodes')
+        return
 
     if bias:
         new_x = np.ones((x.shape[0], x.shape[1] + 1))
@@ -118,23 +122,19 @@ def create_regressor_nn(x, y, no_hidden_layer, no_hidden_nodes, gamma_list,
     i = 0
     while True:
         # Calculate new layers
-        layers = [x]
-        for hidden in range(no_hidden_layer + 1):
-            layer = act_list[hidden](np.dot(layers[hidden],
-                                            wlist[hidden]))
-            layers.append(layer)
+        layers = create_feedforward_nn(x, no_hidden_layer, wlist, act_list)
 
         # Check for error
         error = y - layers[-1]
         mean_error = np.mean(np.abs(error))
         if last_error is not None and last_error <= mean_error:
-            print('Minimum error =', last_error)
+#             print('Minimum error =', last_error)
             break
         else:
             last_error = mean_error
 
-        if (i % 50000) == 0:
-            print("Error =", np.mean(np.abs(mean_error)))
+#         if (i % 50000) == 0:
+#             print("Error =", np.mean(np.abs(mean_error)))
 
         # Gradients
         gradients = list()
@@ -162,6 +162,21 @@ def create_regressor_nn(x, y, no_hidden_layer, no_hidden_nodes, gamma_list,
         i += 1
     actual = layers[-1]
     r2 = r2_score(y, actual)
-    print('R2 =', r2)
-    print('MSE =', mean_squared_error(y, actual))
-    return actual, last_error, r2
+#     print('R2 =', r2)
+#     print('MSE =', mean_squared_error(y, actual))
+    return actual, last_error, r2, wlist
+
+
+def create_feedforward_nn(x, no_hidden_layer, weight_list,
+                          act_list, bias=False):
+    """Create a feed forward neural network"""
+    if bias:
+        new_x = np.ones((x.shape[0], x.shape[1] + 1))
+        new_x[:, 1:] = x
+        x = new_x
+    layers = [x]
+    for hidden in range(no_hidden_layer + 1):
+        layer = act_list[hidden](np.dot(layers[hidden],
+                                        weight_list[hidden]))
+        layers.append(layer)
+    return layers
